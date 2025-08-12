@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CampusPocket — Student Finance (Prototype)</title>
+<style>
+  :root{
+    --bg:#0f1724; --card:#0b1220; --accent:#6ee7b7;
+    --muted:#94a3b8; --glass: rgba(255,255,255,0.03);
+    --glass-2: rgba(255,255,255,0.02); --danger:#ff6b6b;
+    --gold:#ffb020;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+                 Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:
+    radial-gradient(1000px 400px at 10% 10%, rgba(102,126,234,0.06), transparent 10%),
+    linear-gradient(180deg,#071026 0%, var(--bg) 100%);
+    color:#e6eef8; -webkit-font-smoothing:antialiased;}
+  header{display:flex;align-items:center;gap:16px;padding:20px 28px}
+  .brand{
+    display:flex;gap:12px;align-items:center;font-weight:700;font-size:18px;
+  }
+  .logo{height:44px;width:44px;border-radius:10px;display:grid;place-items:center;
+        background:linear-gradient(135deg,var(--accent),#60a5fa);box-shadow:0 6px 20px rgba(6,8,12,0.6)}
+  .container{display:grid;grid-template-columns:360px 1fr 360px;gap:20px;padding:18px;}
+  .panel{background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.02));
+         border-radius:14px;padding:18px;box-shadow: 0 6px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+  h2{margin:0 0 12px 0;font-size:16px}
+  small{color:var(--muted)}
+  /* Left column */
+  .left .wallet-balance{display:flex;align-items:center;justify-content:space-between}
+  .big-money{font-size:28px;font-weight:800;color:var(--accent)}
+  .quick-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .qa-btn{background:var(--glass);padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);
+         cursor:pointer;color:var(--muted);display:flex;gap:8px;align-items:center;font-weight:600}
+  .expenses-list{margin-top:14px;display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto}
+  .expense-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+  .category-badge{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-weight:600;font-size:12px}
+  /* Center column */
+  .center {display:flex;flex-direction:column;gap:16px}
+  .add-expense{display:flex;gap:8px;align-items:center}
+  .field{background:var(--glass-2);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);flex:1;color:#dbeafe}
+  .primary{background:linear-gradient(90deg,var(--accent),#60a5fa);padding:10px 14px;border-radius:10px;color:#022;cursor:pointer;border:none;font-weight:800}
+  .split-row{display:flex;gap:8px;align-items:center}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;text-align:left;color:var(--muted);font-size:13px}
+  th{color:#cfe9dd;font-weight:700}
+  .meter{height:10px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
+  .meter > i{display:block;height:100%;background:linear-gradient(90deg,#34d399,#60a5fa)}
+  /* Right column */
+  .right .card{padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02),transparent)}
+  .chip{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-weight:700;color:var(--muted)}
+  .chatbox{height:220px;overflow:auto;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,0.015),transparent);border-radius:10px}
+  .msg{margin:8px 0;padding:8px 12px;border-radius:12px;max-width:80%}
+  .msg.user{background:rgba(96,165,250,0.12);align-self:end;color:#dbeafe}
+  .msg.bot{background:rgba(255,255,255,0.02);color:var(--muted)}
+  footer{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+  .small-muted{font-size:12px;color:var(--muted)}
+  /* Responsive */
+  @media (max-width:1100px){
+    .container{grid-template-columns:1fr;padding:12px}
+    .left,.right{order:2}
+  }
+  /* subtle micro-interactions */
+  .qa-btn:hover{transform:translateY(-3px);transition:all .15s ease}
+  .primary:hover{transform:translateY(-2px);transition:all .12s}
+  .pill{padding:6px 8px;border-radius:12px;background:rgba(255,255,255,0.02);font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo" aria-hidden>
+      <!-- simple wallet svg -->
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="filter:drop-shadow(0 6px 20px rgba(2,6,23,0.4))">
+        <rect x="2" y="5" width="20" height="14" rx="3" fill="#fff" opacity="0.07"/>
+        <path d="M7 9h10v6H7z" stroke="white" stroke-opacity="0.5" stroke-width="0.6"/>
+        <circle cx="17" cy="12" r="1.4" fill="#ffdd57"/>
+      </svg>
+    </div>
+    CampusPocket
+  </div>
+  <div style="flex:1"></div>
+  <div class="chip" id="healthChip">Health • —</div>
+</header>
+
+<div class="container">
+  <!-- LEFT: Overview -->
+  <div class="panel left">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2>Wallet</h2>
+        <small>Balance & quick actions</small>
+      </div>
+      <div style="text-align:right">
+        <div class="big-money" id="balance">₹0</div>
+        <small id="balance-change" class="small-muted">no history yet</small>
+      </div>
+    </div>
+
+    <div style="margin-top:14px">
+      <div class="wallet-balance">
+        <div>
+          <div class="small-muted">Savings Pot</div>
+          <div style="font-weight:800">₹<span id="savingsPot">0</span></div>
+        </div>
+        <div style="text-align:right">
+          <div class="small-muted">Round-ups</div>
+          <div>on • ₹<span id="roundUpTotal">0</span></div>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="qa-btn" onclick="openQuick('add')">➕ Add Expense</button>
+        <button class="qa-btn" onclick="openQuick('split')">🧑‍🤝‍🧑 Split Bill</button>
+        <button class="qa-btn" onclick="openQuick('round')">🔁 Round-ups</button>
+        <button class="qa-btn" onclick="openQuick('loan')">⚡ Emergency</button>
+        <button class="qa-btn" onclick="openQuick('connect')">🔗 Connect Wallet</button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <h2>Recent</h2>
+      <small>Last 12 entries</small>
+      <div class="expenses-list" id="recentList"></div>
+    </div>
+  </div>
+
+  <!-- CENTER: Main tools -->
+  <div class="panel center">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2>Add Expense</h2>
+        <small>Quick add or cash expense</small>
+      </div>
+      <div class="pill" id="timeNow"></div>
+    </div>
+
+    <div class="card add-expense" style="gap:10px;flex-wrap:wrap">
+      <input id="desc" class="field" placeholder="What did you buy? e.g., pizza, rent, metro" />
+      <input id="amount" class="field" placeholder="Amount (₹)" type="number" min="0" />
+      <select id="payMethod" class="field" style="max-width:160px">
+        <option value="wallet">Wallet</option>
+        <option value="upi">UPI</option>
+        <option value="cash">Cash</option>
+      </select>
+      <button class="primary" onclick="addExpense()">Add</button>
+    </div>
+
+    <div class="card">
+      <h2>Expense Table</h2>
+      <small>Filter, categorize & analyze</small>
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <input id="filter" class="field" placeholder="Filter by text or category" oninput="renderExpenses()" />
+        <div style="width:140px">
+          <div class="small-muted">Sort</div>
+          <select id="sort" class="field" onchange="renderExpenses()">
+            <option value="new">Newest</option>
+            <option value="old">Oldest</option>
+            <option value="amount_desc">Amount desc</option>
+            <option value="amount_asc">Amount asc</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;overflow:auto">
+        <table>
+          <thead><tr><th>Desc</th><th>Category</th><th>Amt</th><th>Method</th><th>When</th></tr></thead>
+          <tbody id="expTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="card" style="flex:1;min-width:280px">
+        <h2>Financial Health</h2>
+        <small>Score, breakdown & mini tips</small>
+        <div style="margin-top:10px">
+          <div>Score <strong id="healthScore">—</strong></div>
+          <div class="meter" style="margin-top:8px"><i id="healthBar" style="width:0%"></i></div>
+          <div style="margin-top:8px" id="healthBreakdown" class="small-muted"></div>
+        </div>
+      </div>
+
+      <div class="card" style="width:320px">
+        <h2>Round-ups & Micro-savings</h2>
+        <small>Set round-up unit and auto-save</small>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <select id="roundUnit" class="field" style="max-width:120px">
+            <option value="10">Round to 10</option>
+            <option value="20">Round to 20</option>
+            <option value="50">Round to 50</option>
+          </select>
+          <button class="qa-btn" onclick="toggleRound()">Toggle: <span id="roundState">off</span></button>
+        </div>
+        <div style="margin-top:10px" class="small-muted">Round-up collected: ₹<span id="roundCollected">0</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recurring Bills & Reminders</h2>
+      <small>Create recurring entries that the app will remind you about</small>
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <input id="recDesc" class="field" placeholder="Electricity / Rent" />
+        <input id="recAmt" class="field" placeholder="Amount" type="number" />
+        <select id="recFreq" class="field" style="max-width:160px">
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+        <button class="primary" onclick="addRecurring()">Add</button>
+      </div>
+      <div style="margin-top:12px" id="recList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Gamified Challenges</h2>
+      <small>Save, win badges, climb the leaderboard</small>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+        <select id="challengeSelect" class="field" style="max-width:220px">
+          <option value="no-buy-day">No-buy Week — 7 days</option>
+          <option value="save-500">Save ₹500 in 2 weeks</option>
+          <option value="rounds-30">30 round-ups challenge</option>
+        </select>
+        <button class="primary" onclick="joinChallenge()">Join</button>
+      </div>
+      <div style="margin-top:10px" id="challengeArea"></div>
+      <div style="margin-top:12px">
+        <h2 style="font-size:14px">Leaderboard</h2>
+        <div id="leaderboard" class="small-muted"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Chat & connections -->
+  <div class="panel right">
+    <div class="card">
+      <h2>Connect</h2>
+      <small>UPI / Wallet</small>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="qa-btn" onclick="connect('upi')">UPI</button>
+        <button class="qa-btn" onclick="connect('wallet')">Wallet</button>
+        <button class="qa-btn" onclick="connect('card')">Card</button>
+      </div>
+      <div style="margin-top:10px" id="connectStatus" class="small-muted">Not connected</div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="card">
+      <h2>AI Budgeting Chatbot</h2>
+      <small>Ask for personalized tips</small>
+      <div class="chatbox" id="chatbox"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="chatIn" class="field" placeholder="Ask: How can I save on food?" />
+        <button class="primary" onclick="sendChat()">Send</button>
+      </div>
+      <div style="margin-top:10px" class="small-muted">Chatbot is rule-based (client-side). For production use, integrate an LLM with privacy & consent.</div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="card">
+      <h2>Emergency Buffer / Mini-loan</h2>
+      <small>Simulated — shows eligibility & terms</small>
+      <div style="margin-top:10px" id="loanArea">
+        <div class="small-muted">Buffer: ₹<span id="bufferAmt">0</span></div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <input id="loanReq" class="field" placeholder="Request amount" type="number" />
+          <button class="qa-btn" onclick="requestLoan()">Request</button>
+        </div>
+        <div style="margin-top:8px" class="small-muted">Note: This is a simulation. Real loans require compliance.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Prototype • not for production • data stored in your browser (localStorage).
+</footer>
+
+<script>
+/* ====================================================
+   CampusPocket — Single-file prototype logic
+   - persistent via localStorage
+   - basic auto-categorize via keyword matching
+   - round-ups auto-push to savings pot
+   - recurring bills detection
+   - simple rule-based budgeting chatbot
+   - gamified challenges / mock leaderboards
+   ==================================================== */
+
+const LS = {
+  get(k, def){ try { return JSON.parse(localStorage.getItem(k)) ?? def } catch(e){return def} },
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+};
+
+let state = {
+  balance: 1000,
+  savings: 200,
+  roundUpEnabled: false,
+  roundUnit: 10,
+  roundCollected: 0,
+  expenses: [], // {id,desc,amt,cat,method,ts}
+  recs: [], // {id,desc,amt,freq,lastTs}
+  challenges: [], // joined
+  leaderboard: [], // simulated
+  roommates: [], // for splits
+  loans: [], // simulated loans
+};
+Object.assign(state, LS.get('campus_state', {}));
+
+function saveState(){
+  LS.set('campus_state', state);
+  renderAll();
+}
+
+/* startup default initial data */
+if(!state._inited){
+  state._inited = true;
+  state.balance = 1000 + Math.round(Math.random()*400);
+  state.savings = 200;
+  state.roundUpEnabled = false;
+  state.roundUnit = 10;
+  // mock leaderboard peers (anonymized)
+  state.leaderboard = [
+    {name:'Peer A', score: 82, saved: 750},
+    {name:'Peer B', score: 69, saved: 420},
+    {name:'You', score: 0, saved: state.savings},
+  ];
+  saveState();
+}
+
+/* --- utilities --- */
+function id(){ return Math.random().toString(36).slice(2,9) }
+function fmt(n){ return Number(n).toLocaleString('en-IN') }
+function now(){ return new Date().toISOString() }
+function prettyDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleString();
+}
+
+/* --- category auto-detect --- */
+const categories = [
+  {name:'Food', kws:['pizza','burger','meal','food','canteen','dosa','biryani','chai','coffee','mc']},
+  {name:'Transport', kws:['metro','bus','uber','ola','taxi','auto','fuel','petrol','bus']},
+  {name:'Groceries', kws:['grocery','groceries','veg','fruit','milk','supermarket']},
+  {name:'Rent', kws:['rent','hostel','flat','pg']},
+  {name:'Entertainment', kws:['movie','netflix','spotify','game','concert','pub']},
+  {name:'Bills', kws:['electric','electricity','water','bill','internet','wifi']},
+  {name:'Misc', kws:[]}
+];
+function detectCategory(text){
+  const t = (text||'').toLowerCase();
+  for(const c of categories){
+    for(const k of c.kws) if(t.includes(k)) return c.name;
+  }
+  // small heuristic numbers => bills/tuition?
+  if(/\bfee\b|\btuition\b/.test(t)) return 'Bills';
+  return 'Misc';
+}
+
+/* --- expense logic --- */
+function addExpense(){ // from UI
+  const desc = document.getElementById('desc').value.trim();
+  const amt = Number(document.getElementById('amount').value);
+  const method = document.getElementById('payMethod').value;
+  if(!desc || !amt || amt<=0) { alert('Enter description and valid amount'); return; }
+
+  const cat = detectCategory(desc);
+  const e = {id: id(), desc, amt, cat, method, ts: now()};
+  state.expenses.unshift(e);
+  state.balance = Math.max(0, state.balance - amt);
+  // round-up
+  applyRoundUp(amt);
+  // update savings if payMethod is wallet? we'll not auto transfer except round ups
+  saveState();
+  // clear UI
+  document.getElementById('desc').value=''; document.getElementById('amount').value='';
+  renderAll();
+}
+
+/* round-ups */
+function applyRoundUp(amount){
+  if(!state.roundUpEnabled) return;
+  const unit = Number(state.roundUnit) || 10;
+  const rem = amount % unit;
+  const round = rem === 0 ? 0 : unit - rem;
+  if(round > 0){
+    state.roundCollected += round;
+    // optionally auto-transfer when collected > threshold
+    if(state.roundCollected >= unit * 3){ // auto push threshold
+      state.savings += state.roundCollected;
+      state.roundCollected = 0;
+    }
+  }
+}
+
+/* toggle round */
+function toggleRound(){
+  state.roundUpEnabled = !state.roundUpEnabled;
+  state.roundUnit = Number(document.getElementById('roundUnit').value);
+  saveState();
+}
+
+/* render expenses list & table */
+function renderExpenses(){
+  const list = document.getElementById('recentList'); list.innerHTML='';
+  const table = document.getElementById('expTable'); table.innerHTML='';
+  const filter = document.getElementById('filter').value.toLowerCase();
+  let exps = [...state.expenses];
+
+  const sort = document.getElementById('sort')?.value || 'new';
+  if(sort==='old') exps.reverse();
+  if(sort==='amount_desc') exps.sort((a,b)=>b.amt-a.amt);
+  if(sort==='amount_asc') exps.sort((a,b)=>a.amt-b.amt);
+
+  exps = exps.filter(e => {
+    if(!filter) return true;
+    return e.desc.toLowerCase().includes(filter) || e.cat.toLowerCase().includes(filter);
+  });
+
+  for(const e of exps.slice(0,12)){
+    const div = document.createElement('div'); div.className='expense-item';
+    div.innerHTML = `
+      <div>
+        <div style="font-weight:700">${e.desc}</div>
+        <small class="small-muted">${e.cat} • ${prettyDate(e.ts)}</small>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:800">₹${fmt(e.amt)}</div>
+        <div class="small-muted">${e.method}</div>
+      </div>
+    `;
+    list.appendChild(div);
+  }
+
+  for(const e of exps){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${e.desc}</td><td>${e.cat}</td><td>₹${fmt(e.amt)}</td><td>${e.method}</td><td>${prettyDate(e.ts)}</td>`;
+    table.appendChild(tr);
+  }
+}
+
+/* recurring bills */
+function addRecurring(){
+  const d = document.getElementById('recDesc').value.trim();
+  const a = Number(document.getElementById('recAmt').value);
+  const f = document.getElementById('recFreq').value;
+  if(!d || !a) { alert('fill'); return; }
+  state.recs.push({id:id(),desc:d,amt:a,freq:f,lastTs:now()});
+  document.getElementById('recDesc').value=''; document.getElementById('recAmt').value='';
+  saveState();
+}
+function renderRecs(){
+  const container = document.getElementById('recList'); container.innerHTML='';
+  for(const r of state.recs){
+    const div = document.createElement('div'); div.className='card';
+    div.style.marginBottom='8px';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>${r.desc}</strong><div class="small-muted">₹${fmt(r.amt)} • ${r.freq}</div></div>
+      <div style="text-align:right">
+        <button class="qa-btn" onclick="markRecurring('${r.id}')">Mark paid</button>
+        <button class="qa-btn" onclick="removeRecurring('${r.id}')">Remove</button>
+      </div>
+    </div>`;
+    container.appendChild(div);
+  }
+}
+function markRecurring(id){
+  const r = state.recs.find(x=>x.id===id); if(!r) return;
+  // create expense
+  state.expenses.unshift({id:id(),desc:r.desc,amt:r.amt,cat:detectCategory(r.desc),method:'card',ts:now()});
+  state.balance = Math.max(0, state.balance - r.amt);
+  r.lastTs = now();
+  saveState();
+}
+function removeRecurring(id){ state.recs = state.recs.filter(x=>x.id!==id); saveState(); }
+
+/* quick open (simulate) */
+function openQuick(name){
+  if(name==='add'){ window.scrollTo({top:100,behavior:'smooth'}); document.getElementById('desc').focus(); }
+  if(name==='split'){ openSplitModal() }
+  if(name==='round'){ toggleRound(); alert('Round-up toggled.'); }
+  if(name==='loan'){ document.getElementById('loanReq').focus() }
+  if(name==='connect'){ connect('upi') }
+}
+
+/* Split bill flow (simple prompt-based) */
+function openSplitModal(){
+  const desc = prompt('Bill description e.g., dinner with roommates');
+  if(!desc) return;
+  const total = Number(prompt('Total amount (₹)'));
+  if(!total || total<=0) return;
+  const names = prompt('Roommates (comma separated) e.g., Ash, Sam, Priya');
+  const share = Number((total / (names.split(',').length + 1)).toFixed(2));
+  // create expense for you and create reminder messages for roommates
+  state.expenses.unshift({id:id(),desc:`Split: ${desc}`,amt:share,cat:'Food',method:'split',ts:now()});
+  // store roommates and reminders
+  const rms = names.split(',').map(s=>s.trim()).filter(Boolean);
+  for(const r of rms) {
+    // a simple "reminder" entry (simulation)
+    state.roommates.push({name:r,amount:share,desc,ts:now()});
+  }
+  state.balance = Math.max(0, state.balance - share);
+  saveState();
+  alert(`You paid ₹${share}. Reminders created for ${rms.length} roommates (simulated).`);
+}
+
+/* connect (simulate wallet connect) */
+function connect(type){
+  document.getElementById('connectStatus').textContent = `Connected: ${type.toUpperCase()} (simulated)`;
+  saveState();
+}
+
+/* loan simulation */
+function requestLoan(){
+  const amt = Number(document.getElementById('loanReq').value);
+  if(!amt || amt<=0){ alert('Enter amount'); return; }
+  // simple eligibility: if savings < amt*0.5 then limited, else approve small
+  const eligible = state.savings >= amt*0.2 || state.balance >= amt*0.3;
+  if(!eligible){
+    alert('Not eligible for loan (simulation). Try smaller amount or build savings.');
+    return;
+  }
+  const loan = {id:id(),amt,ts:now(),termDays:14,interest:3 + Math.round(Math.random()*4)};
+  state.loans.push(loan);
+  state.balance += amt;
+  alert(`Loan simulated: ₹${amt} credited. Repay in ${loan.termDays} days at ${loan.interest}% (simulation).`);
+  saveState();
+}
+
+/* Chatbot: very small rule-based engine producing budgeting tips */
+function sendChat(){
+  const q = document.getElementById('chatIn').value.trim();
+  if(!q) return;
+  appendChat('user',q);
+  document.getElementById('chatIn').value='';
+  setTimeout(()=> {
+    const ans = chatbotReply(q);
+    appendChat('bot',ans);
+  }, 500);
+}
+function appendChat(who,txt){
+  const box = document.getElementById('chatbox');
+  const div = document.createElement('div'); div.className='msg ' + (who==='user'?'user':'bot'); div.textContent = txt;
+  box.appendChild(div); box.scrollTop = box.scrollHeight;
+}
+function chatbotReply(q){
+  const s = q.toLowerCase();
+  // personalization: examine recent spend categories
+  const top = topCategories();
+  if(s.includes('food')) return `You spend most on ${top[0]||'misc'}. Try meal-prep 2x/week, set a ₹200 weekly food budget, and use the 'No-buy Week' challenge.`;
+  if(s.includes('save')) return `Aim for saving 10%-20% of monthly inflow. Start with micro-savings: round-ups (currently ${state.roundUpEnabled?'on':'off'}). Move collected round-ups to Savings when comfortable.`;
+  if(s.includes('rent')) return `Consider automating rent payments and splitting utilities. Track utility usage and set a recurring reminder here.`;
+  if(s.includes('loan')|| s.includes('borrow')) return `Simulated mini-loan available here is only a mock. For real borrowing, consult campus credit co-op or regulated lenders. Keep emergency buffer = 1 week living costs.`;
+  if(s.includes('budget')|| s.includes('how')) {
+    return `Quick starter budget for students:\n• Needs (rent, groceries): 50%\n• Wants (eating out): 25%\n• Savings + repayments: 25%\nUse our 'save ₹500' challenge and set recurring bills to track needs.`;
+  }
+  // fallback: generic tip + nudges
+  return `Tip: your current balance ₹${fmt(state.balance)} and savings ₹${fmt(state.savings)}. Top spend categories: ${top.slice(0,3).join(', ') || 'none'}. Try setting a micro-goal like "Save ₹500 in 2 weeks".`;
+}
+
+/* analytics */
+function topCategories(){
+  const counts = {};
+  for(const e of state.expenses){
+    counts[e.cat] = (counts[e.cat]||0) + e.amt;
+  }
+  const arr = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  return arr;
+}
+
+/* challenges */
+function joinChallenge(){
+  const id = document.getElementById('challengeSelect').value;
+  if(state.challenges.includes(id)) { alert('Already joined'); return; }
+  state.challenges.push({id,joined:now(),progress:0});
+  saveState();
+}
+
+/* simple leaderboard simulation */
+function renderLeaderboard(){
+  const el = document.getElementById('leaderboard'); el.innerHTML='';
+  // put user in middle
+  state.leaderboard = state.leaderboard.filter(x=>x.name!=='You');
+  state.leaderboard.splice(1,0,{name:'You',score: calcHealthScore(), saved: state.savings});
+  for(const p of state.leaderboard){
+    el.innerHTML += `<div style="display:flex;justify-content:space-between;padding:4px 0">
+      <div>${p.name}</div><div class="small-muted">${Math.round(p.score)} pts • ₹${fmt(p.saved)}</div>
+    </div>`;
+  }
+}
+
+/* health score: small heuristic combining balance, savings, recurring coverage, expense variety */
+function calcHealthScore(){
+  let score = 50;
+  // balance weight
+  score += Math.min(30, state.balance / 50); // more balance -> higher
+  // savings weight
+  score += Math.min(20, state.savings / 50);
+  // recurring bills negative if unpaid (simulate)
+  score -= Math.min(15, (state.recs.length)*3);
+  // expense spike penalty: if last 7 days avg high
+  const week = state.expenses.slice(0,30);
+  const avg = week.reduce((s,x)=>s+x.amt,0) / (week.length||1);
+  if(avg > 400) score -= 8;
+  score = Math.max(0,Math.min(100, Math.round(score)));
+  return score;
+}
+
+/* render health area */
+function renderHealth(){
+  const s = calcHealthScore();
+  document.getElementById('healthScore').textContent = s + '/100';
+  document.getElementById('healthBar').style.width = s + '%';
+  document.getElementById('healthBreakdown').textContent = `Balance ₹${fmt(state.balance)} • Savings ₹${fmt(state.savings)} • ${state.recs.length} recurring`;
+  document.getElementById('healthChip').textContent = `Health • ${s}`;
+}
+
+/* leaderboard & challenges area */
+function renderChallenges(){
+  const area = document.getElementById('challengeArea');
+  area.innerHTML = '';
+  if(state.challenges.length===0) area.innerHTML = '<div class="small-muted">No active challenges</div>';
+  for(const c of state.challenges){
+    const div = document.createElement('div'); div.className='card';
+    div.style.marginBottom='8px';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between">
+      <div><strong>${c.id}</strong><div class="small-muted">joined ${prettyDate(c.joined)}</div></div>
+      <div><button class="qa-btn" onclick="leaveChallenge('${c.id}')">Leave</button></div>
+    </div>`;
+    area.appendChild(div);
+  }
+}
+function leaveChallenge(id){ state.challenges = state.challenges.filter(x=>x.id!==id); saveState(); }
+
+/* main render */
+function renderAll(){
+  document.getElementById('balance').textContent = '₹' + fmt(state.balance);
+  document.getElementById('savingsPot').textContent = fmt(state.savings);
+  document.getElementById('roundUpTotal').textContent = fmt(state.roundCollected);
+  document.getElementById('roundCollected').textContent = fmt(state.roundCollected);
+  document.getElementById('roundState').textContent = state.roundUpEnabled ? 'on' : 'off';
+  document.getElementById('roundUnit').value = state.roundUnit;
+  document.getElementById('connectStatus').textContent = (LS.get('campus_state')?.connectStatus) || 'Not connected';
+  renderExpenses(); renderRecs(); renderHealth(); renderLeaderboard(); renderChallenges();
+  document.getElementById('bufferAmt').textContent = fmt(Math.max(0, Math.round(state.balance*0.1)));
+  document.getElementById('roundCollected').textContent = fmt(state.roundCollected);
+  document.getElementById('roundUpTotal').textContent = fmt(state.roundCollected);
+  // update recent changes
+  document.getElementById('balance-change').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+}
+
+/* initialize time display */
+function tick(){
+  document.getElementById('timeNow').textContent = new Date().toLocaleString();
+}
+setInterval(tick,1000); tick();
+
+/* onload */
+renderAll();
+
+/* for demo: allow clearing stored data (useful during testing) */
+window.__cp = {
+  reset(){ if(confirm('Reset demo data?')){ localStorage.removeItem('campus_state'); location.reload(); } }
+};
+
+/* You can extend this file by adding secure backend APIs:
+   - POST new expense to server
+   - integrate real UPI/payments via providers (Razorpay/Paytm/Bank APIs)
+   - use real LLM for chatbot via server with privacy controls
+   - implement loan underwriting & KYC securely server-side
+*/
+</script>
+</body>
+</html>
